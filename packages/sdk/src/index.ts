@@ -1,0 +1,15 @@
+export { EngramClient, PaymentRequiredError } from "./client.js";
+export type {
+  EngramClientConfig,
+  PaymentRequirement,
+  StoreRequest,
+  StoreResponse,
+  RetrieveResponse,
+  SearchResult,
+  SearchResponse,
+  RegisterResponse,
+  AgentInfo,
+  IndexResponse,
+  UpdateIndexResponse,
+  HealthResponse,
+} from "./types.js";

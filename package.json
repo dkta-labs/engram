@@ -1,0 +1,18 @@
+{
+  "name": "engram",
+  "private": true,
+  "workspaces": [
+    "packages/contracts",
+    "packages/api",
+    "packages/sdk"
+  ],
+  "scripts": {
+    "build:contracts": "npm run build --workspace=packages/contracts",
+    "build:api": "npm run build --workspace=packages/api",
+    "build:sdk": "npm run build --workspace=packages/sdk",
+    "build": "npm run build:contracts && npm run build:api && npm run build:sdk",
+    "dev": "npm run dev --workspace=packages/api",
+    "test:contracts": "npm test --workspace=packages/contracts",
+    "deploy:contracts": "npm run deploy --workspace=packages/contracts"
+  }
+}
