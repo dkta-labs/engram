@@ -1,0 +1,61 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="404 — Engram">
+  <section class="not-found">
+    <div class="container">
+      <h1>404</h1>
+      <p>Page not found.</p>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/docs">Docs</a>
+      </nav>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .not-found {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 6rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    color: var(--text-muted);
+    line-height: 1;
+    margin-bottom: var(--space-3);
+  }
+
+  p {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-5);
+  }
+
+  nav {
+    display: flex;
+    gap: var(--space-4);
+    justify-content: center;
+  }
+
+  nav a {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    transition: all var(--transition);
+  }
+
+  nav a:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+</style>
