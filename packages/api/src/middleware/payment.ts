@@ -31,6 +31,6 @@ export function createPaymentMiddleware() {
         config: { description: "Update memory index" },
       },
     },
-    { url: "https://facilitator.coinbase.com" }
+    { url: "https://x402.org/facilitator" }
   );
 }
