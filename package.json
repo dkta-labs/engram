@@ -4,7 +4,8 @@
   "workspaces": [
     "packages/contracts",
     "packages/api",
-    "packages/sdk"
+    "packages/sdk",
+    "packages/web"
   ],
   "scripts": {
     "build:contracts": "npm run build --workspace=packages/contracts",
@@ -13,6 +14,8 @@
     "build": "npm run build:contracts && npm run build:api && npm run build:sdk",
     "dev": "npm run dev --workspace=packages/api",
     "test:contracts": "npm test --workspace=packages/contracts",
-    "deploy:contracts": "npm run deploy --workspace=packages/contracts"
+    "deploy:contracts": "npm run deploy --workspace=packages/contracts",
+    "build:web": "npm run build --workspace=packages/web",
+    "dev:web": "npm run dev --workspace=packages/web"
   }
 }
