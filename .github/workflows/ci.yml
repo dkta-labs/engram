@@ -34,18 +34,9 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: |
-            packages/api/package-lock.json
-            packages/sdk/package-lock.json
-            packages/contracts/package-lock.json
 
-      - name: Install API deps
+      - name: Install deps
         run: npm ci
-        working-directory: packages/api
-
-      - name: Install SDK deps
-        run: npm ci
-        working-directory: packages/sdk
 
       - name: Typecheck API
         run: npx tsc --noEmit
@@ -56,17 +47,13 @@ jobs:
         working-directory: packages/sdk
 
       - name: Build API
-        run: npm run build
-        working-directory: packages/api
+        run: npm run build --workspace=packages/api
 
       - name: Build SDK
-        run: npm run build
-        working-directory: packages/sdk
+        run: npm run build --workspace=packages/sdk
 
       - name: Test contracts
-        run: |
-          npm ci
-          npx hardhat test
+        run: npx hardhat test
         working-directory: packages/contracts
 
   deploy:
@@ -82,9 +69,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd /home/hermes/engram
-            bash deploy.sh
+          script: bash /home/hermes/engram/deploy.sh
           script_stop: true
           timeout: 300s
 
