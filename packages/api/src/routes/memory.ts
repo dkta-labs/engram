@@ -9,6 +9,7 @@ import {
 } from "../services/crypto.js";
 import * as ipfs from "../services/ipfs.js";
 import * as vector from "../services/vector.js";
+import { logOp } from "../services/vector.js";
 
 const router = Router();
 
@@ -68,6 +69,7 @@ router.post("/", agentAuth, async (req: Request, res: Response) => {
     }
 
     res.json({ cid, type });
+    logOp(agentId, "store");
   } catch (err) {
     res.status(500).json({ error: "Failed to store memory", details: String(err) });
   }
@@ -100,6 +102,7 @@ router.get("/:cid", agentAuth, async (req: Request, res: Response) => {
       metadata: decrypted.metadata,
       type: decrypted.type,
     });
+    logOp(req.agentId!, "retrieve");
   } catch (err) {
     res.status(500).json({ error: "Failed to retrieve memory", details: String(err) });
   }
@@ -120,8 +123,8 @@ router.post("/search", agentAuth, async (req: Request, res: Response) => {
     }
 
     const results = await vector.searchEmbeddings(BigInt(agentId), queryEmbedding, topK || 5);
-
     res.json({ results });
+    logOp(agentId, "search");
   } catch (err) {
     res.status(500).json({ error: "Search failed", details: String(err) });
   }

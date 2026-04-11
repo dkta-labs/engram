@@ -11,6 +11,16 @@ CREATE TABLE IF NOT EXISTS embedding_dimensions (
   table_name TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS ops_log (
+  id        BIGSERIAL PRIMARY KEY,
+  agent_id  BIGINT NOT NULL,
+  op_type   TEXT NOT NULL,  -- 'store' | 'retrieve' | 'search'
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS ops_log_created_at_idx ON ops_log (created_at);
+CREATE INDEX IF NOT EXISTS ops_log_agent_id_idx   ON ops_log (agent_id);
 `;
 
 /** Validate dimension is a positive integer to prevent SQL injection in dynamic table names */
@@ -184,4 +194,16 @@ export async function stopVector(): Promise<void> {
     await pool.end();
     pool = null;
   }
+}
+
+export function getPool(): Pool {
+  if (!pool) throw new Error("Vector DB not initialized");
+  return pool;
+}
+
+/** Fire-and-forget ops logging — never throws */
+export function logOp(agentId: number, opType: "store" | "retrieve" | "search"): void {
+  if (!pool) return;
+  pool.query("INSERT INTO ops_log (agent_id, op_type) VALUES ($1, $2)", [agentId, opType])
+    .catch(() => { /* non-critical */ });
 }
