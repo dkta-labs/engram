@@ -1,0 +1,46 @@
+# Engram — engram.dkta.dev
+# Cloudflare Full SSL — self-signed origin cert
+# Managed in repo, deployed by CI. Do not edit on VPS directly.
+
+{
+	admin localhost:2019
+}
+
+(security_headers) {
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
+
+engram.dkta.dev {
+	tls /etc/caddy/origin.crt /etc/caddy/origin.key
+
+	request_body {
+		max_size 10MB
+	}
+
+	# API routes → Express container
+	handle /v1/* {
+		reverse_proxy localhost:3000 {
+			health_uri /v1/health
+			health_interval 30s
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	# Static site → built Astro output
+	handle {
+		root * /opt/engram-web
+		file_server
+		encode gzip
+		try_files {path} {path}/index.html =404
+	}
+
+	import security_headers
+}

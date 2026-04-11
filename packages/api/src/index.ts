@@ -1,5 +1,3 @@
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
@@ -9,8 +7,6 @@ import { initRegistry } from "./services/registry.js";
 import agentRoutes from "./routes/agent.js";
 import memoryRoutes from "./routes/memory.js";
 import statsRoutes from "./routes/stats.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
@@ -35,11 +31,6 @@ app.use(createPaymentMiddleware());
 app.use("/v1/agent", agentRoutes);
 app.use("/v1/memory", memoryRoutes);
 app.use("/v1/stats", statsRoutes);
-
-// Landing page
-app.get("/", (_req, res) => {
-  res.sendFile(join(__dirname, "../public/index.html"));
-});
 
 async function start(): Promise<void> {
   console.log("Initializing services...");
