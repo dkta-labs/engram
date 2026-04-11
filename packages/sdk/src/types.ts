@@ -18,37 +18,18 @@ export interface StoreRequest {
   type: "blob" | "kv" | "text";
   data: unknown;
   metadata?: Record<string, unknown>;
-  embedding?: number[];
-  embeddingModel?: string;
-  embeddingDim?: number;
 }
 
 export interface StoreResponse {
-  cid: string;
+  hash: string;
   type: string;
 }
 
 export interface RetrieveResponse {
-  cid: string;
+  hash: string;
   data: unknown;
   metadata: Record<string, unknown> | null;
   type: string;
-}
-
-export interface SearchRequest {
-  agentId: number;
-  queryEmbedding: number[];
-  topK?: number;
-}
-
-export interface SearchResult {
-  cid: string;
-  score: number;
-  metadata: Record<string, unknown> | null;
-}
-
-export interface SearchResponse {
-  results: SearchResult[];
 }
 
 export interface RegisterResponse {
@@ -60,17 +41,17 @@ export interface RegisterResponse {
 export interface AgentInfo {
   agentId: number;
   owner: string;
-  indexCid: string | null;
+  indexHash: string | null;
 }
 
 export interface IndexResponse {
   agentId: number;
-  cid: string | null;
+  hash: string | null;
   index: unknown;
 }
 
 export interface UpdateIndexResponse {
-  cid: string;
+  hash: string;
   txHash: string;
 }
 

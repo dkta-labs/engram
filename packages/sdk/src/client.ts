@@ -6,7 +6,6 @@ import type {
   StoreRequest,
   StoreResponse,
   RetrieveResponse,
-  SearchResponse,
   RegisterResponse,
   AgentInfo,
   IndexResponse,
@@ -125,17 +124,8 @@ export class EngramClient {
     }, true);
   }
 
-  async retrieve(cid: string): Promise<RetrieveResponse> {
-    return this.request<RetrieveResponse>("GET", `/v1/memory/${cid}`, undefined, true);
-  }
-
-  async search(queryEmbedding: number[], topK?: number): Promise<SearchResponse> {
-    if (!this.agentId) throw new Error("Not registered. Call register() or setAgentId() first.");
-    return this.request<SearchResponse>("POST", "/v1/memory/search", {
-      agentId: this.agentId,
-      queryEmbedding,
-      topK,
-    }, true);
+  async retrieve(hash: string): Promise<RetrieveResponse> {
+    return this.request<RetrieveResponse>("GET", `/v1/memory/${hash}`, undefined, true);
   }
 
   async getIndex(): Promise<IndexResponse> {
