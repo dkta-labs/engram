@@ -28,9 +28,9 @@ health_check() {
 switch_caddy() {
   local new_port=$1
   log "Switching Caddy upstream to port $new_port..."
-  # Path: routes[0] > handle[0](subroute) > routes[1](group2,/v1/*) > handle[0](subroute) > routes[0] > handle[0](reverse_proxy) > upstreams
+  # Path: routes[0] > handle[0](subroute) > routes[0] > handle[2](reverse_proxy) > upstreams
   curl -sf -X PATCH \
-    "$CADDY_API/config/apps/http/servers/srv0/routes/0/handle/0/routes/1/handle/0/routes/0/handle/0/upstreams" \
+    "$CADDY_API/config/apps/http/servers/srv0/routes/0/handle/0/routes/0/handle/2/upstreams" \
     -H "Content-Type: application/json" \
     -d "[{\"dial\": \"localhost:${new_port}\"}]" || die "Failed to switch Caddy upstream"
   log "Caddy now pointing to :$new_port"
@@ -38,7 +38,7 @@ switch_caddy() {
 
 active_port() {
   curl -sf \
-    "$CADDY_API/config/apps/http/servers/srv0/routes/0/handle/0/routes/1/handle/0/routes/0/handle/0/upstreams/0/dial" \
+    "$CADDY_API/config/apps/http/servers/srv0/routes/0/handle/0/routes/0/handle/2/upstreams/0/dial" \
     2>/dev/null | tr -d '"' | cut -d: -f2 || echo "3000"
 }
 
@@ -105,7 +105,7 @@ sudo docker run -d \
   --env-file "$REPO_DIR/.env" \
   -p "127.0.0.1:${NEW_PORT}:3000" \
   --dns 8.8.8.8 --dns 1.1.1.1 \
-  -v engram_ipfsdata:/app/.helia \
+  -v engram_blobdata:/data/blobs \
   --restart unless-stopped \
   engram-api:candidate \
   || die "Failed to start new container"
