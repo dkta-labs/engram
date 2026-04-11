@@ -4,7 +4,7 @@ import morgan from "morgan";
 import { config } from "./config.js";
 import { createPaymentMiddleware } from "./middleware/payment.js";
 import { initIpfs, stopIpfs } from "./services/ipfs.js";
-import { initVector, stopVector } from "./services/vector.js";
+
 import { initRegistry } from "./services/registry.js";
 import agentRoutes from "./routes/agent.js";
 import memoryRoutes from "./routes/memory.js";
@@ -38,7 +38,7 @@ async function start(): Promise<void> {
   console.log("Initializing services...");
 
   initRegistry();
-  await Promise.all([initIpfs(), initVector()]);
+  await initIpfs();
 
   app.listen(config.port, () => {
     console.log(`Engram API listening on port ${config.port}`);
@@ -49,7 +49,7 @@ async function start(): Promise<void> {
 
 async function shutdown(): Promise<void> {
   console.log("Shutting down...");
-  await Promise.all([stopIpfs(), stopVector()]);
+  await stopIpfs();
   process.exit(0);
 }
 

@@ -5,9 +5,6 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
     volumes:
       - ipfsdata:/app/.helia
     dns:
@@ -15,21 +12,5 @@ services:
       - 1.1.1.1
     restart: unless-stopped
 
-  postgres:
-    image: pgvector/pgvector:pg16
-    environment:
-      POSTGRES_DB: engram
-      POSTGRES_USER: engram
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U engram"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
 volumes:
-  pgdata:
   ipfsdata:

@@ -9,7 +9,7 @@ export const config = {
   contractAddress: process.env.CONTRACT_ADDRESS || "",
   pinataJwt: process.env.PINATA_JWT || "",
   pinataGateway: process.env.PINATA_GATEWAY || "gateway.pinata.cloud",
-  databaseUrl: process.env.DATABASE_URL || "postgresql://engram:engram@localhost:5432/engram",
+
   baseSepoliaRpc: process.env.BASE_SEPOLIA_RPC || "https://sepolia.base.org",
 } as const;
 
