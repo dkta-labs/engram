@@ -11,6 +11,7 @@ export const config = {
   pinataGateway: process.env.PINATA_GATEWAY || "gateway.pinata.cloud",
 
   baseSepoliaRpc: process.env.BASE_SEPOLIA_RPC || "https://sepolia.base.org",
+  blobDir: process.env.BLOB_DIR || "/data/blobs",
 } as const;
 
 export const AGENT_REGISTRY_ABI = [

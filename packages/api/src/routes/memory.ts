@@ -7,7 +7,7 @@ import {
   serializeEncrypted,
   deserializeEncrypted,
 } from "../services/crypto.js";
-import * as ipfs from "../services/ipfs.js";
+import * as blobstore from "../services/blobstore.js";
 
 const router = Router();
 
@@ -38,19 +38,19 @@ router.post("/", agentAuth, async (req: Request, res: Response) => {
     const encrypted = encryptJson(payload, key);
     const serialized = serializeEncrypted(encrypted);
 
-    // Write to IPFS
-    const cid = await ipfs.writeBytes(serialized);
+    // Write to blobstore
+    const hash = await blobstore.writeBlob(serialized);
 
-    res.json({ cid, type });
+    res.json({ hash, type });
   } catch (err) {
     res.status(500).json({ error: "Failed to store memory", details: String(err) });
   }
 });
 
-// GET /v1/memory/:cid — x402 gated, auth required
-router.get("/:cid", agentAuth, async (req: Request, res: Response) => {
+// GET /v1/memory/:hash — x402 gated, auth required
+router.get("/:hash", agentAuth, async (req: Request, res: Response) => {
   try {
-    const { cid } = req.params;
+    const { hash } = req.params;
     const agentAddress = req.agentAddress!;
 
     const keyDeriveSig = req.headers["x-derive-sig"] as string | undefined;
@@ -60,7 +60,7 @@ router.get("/:cid", agentAuth, async (req: Request, res: Response) => {
     }
 
     const key = await deriveKey(agentAddress, keyDeriveSig);
-    const encryptedBytes = await ipfs.readBytes(cid);
+    const encryptedBytes = await blobstore.readBlob(hash);
     const encrypted = deserializeEncrypted(Buffer.from(encryptedBytes));
     const decrypted = decryptJson(encrypted, key) as {
       type: string;
@@ -69,7 +69,7 @@ router.get("/:cid", agentAuth, async (req: Request, res: Response) => {
     };
 
     res.json({
-      cid,
+      hash,
       data: decrypted.data,
       metadata: decrypted.metadata,
       type: decrypted.type,

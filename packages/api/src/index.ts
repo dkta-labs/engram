@@ -3,8 +3,6 @@ import cors from "cors";
 import morgan from "morgan";
 import { config } from "./config.js";
 import { createPaymentMiddleware } from "./middleware/payment.js";
-import { initIpfs, stopIpfs } from "./services/ipfs.js";
-
 import { initRegistry } from "./services/registry.js";
 import agentRoutes from "./routes/agent.js";
 import memoryRoutes from "./routes/memory.js";
@@ -38,7 +36,6 @@ async function start(): Promise<void> {
   console.log("Initializing services...");
 
   initRegistry();
-  await initIpfs();
 
   app.listen(config.port, () => {
     console.log(`Engram API listening on port ${config.port}`);
@@ -47,14 +44,8 @@ async function start(): Promise<void> {
   });
 }
 
-async function shutdown(): Promise<void> {
-  console.log("Shutting down...");
-  await stopIpfs();
-  process.exit(0);
-}
-
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
+process.on("SIGINT", () => process.exit(0));
+process.on("SIGTERM", () => process.exit(0));
 
 start().catch((err) => {
   console.error("Failed to start:", err);

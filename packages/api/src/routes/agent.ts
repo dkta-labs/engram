@@ -12,7 +12,7 @@ import {
   deserializeEncrypted,
 } from "../services/crypto.js";
 import * as registry from "../services/registry.js";
-import * as ipfs from "../services/ipfs.js";
+import * as blobstore from "../services/blobstore.js";
 
 const router = Router();
 
@@ -61,9 +61,9 @@ router.get("/:agentId", async (req: Request, res: Response) => {
       return;
     }
 
-    const indexCid = await registry.getIndex(agentId);
+    const indexHash = await registry.getIndex(agentId);
 
-    res.json({ agentId, owner, indexCid: indexCid || null });
+    res.json({ agentId, owner, indexHash: indexHash || null });
   } catch (err) {
     res.status(500).json({ error: "Failed to get agent", details: String(err) });
   }
@@ -75,14 +75,14 @@ router.get("/:agentId/index", agentAuth, async (req: Request, res: Response) => 
     const agentId = req.agentId!;
     const agentAddress = req.agentAddress!;
 
-    const indexCid = await registry.getIndex(agentId);
-    if (!indexCid) {
+    const indexHash = await registry.getIndex(agentId);
+    if (!indexHash) {
       res.json({ agentId, index: null });
       return;
     }
 
     // Fetch and decrypt the index
-    const encryptedBytes = await ipfs.readBytes(indexCid);
+    const encryptedBytes = await blobstore.readBlob(indexHash);
     const keyDeriveSig = req.headers["x-derive-sig"] as string | undefined;
     if (!keyDeriveSig) {
       res.status(400).json({ error: "X-Derive-Sig header required for decryption" });
@@ -93,7 +93,7 @@ router.get("/:agentId/index", agentAuth, async (req: Request, res: Response) => 
     const encrypted = deserializeEncrypted(Buffer.from(encryptedBytes));
     const indexDoc = decryptJson(encrypted, key);
 
-    res.json({ agentId, cid: indexCid, index: indexDoc });
+    res.json({ agentId, hash: indexHash, index: indexDoc });
   } catch (err) {
     res.status(500).json({ error: "Failed to get index", details: String(err) });
   }
@@ -121,10 +121,10 @@ router.put("/:agentId/index", agentAuth, async (req: Request, res: Response) => 
     const encrypted = encryptJson(indexDoc, key);
     const serialized = serializeEncrypted(encrypted);
 
-    const cid = await ipfs.writeBytes(serialized);
-    const txHash = await registry.updateIndex(agentId, cid);
+    const hash = await blobstore.writeBlob(serialized);
+    const txHash = await registry.updateIndex(agentId, hash);
 
-    res.json({ cid, txHash });
+    res.json({ hash, txHash });
   } catch (err) {
     res.status(500).json({ error: "Failed to update index", details: String(err) });
   }

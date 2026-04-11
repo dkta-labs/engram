@@ -10,7 +10,7 @@ export function createPaymentMiddleware() {
         network: "base-sepolia",
         config: { description: "Store encrypted memory on IPFS" },
       },
-      "GET /v1/memory/:cid": {
+      "GET /v1/memory/:hash": {
         price: "$0.0001",
         network: "base-sepolia",
         config: { description: "Retrieve encrypted memory" },
