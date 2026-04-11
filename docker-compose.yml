@@ -8,6 +8,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - ipfsdata:/app/.helia
     restart: unless-stopped
 
   postgres:
@@ -27,3 +29,4 @@ services:
 
 volumes:
   pgdata:
+  ipfsdata:

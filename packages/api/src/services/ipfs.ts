@@ -1,21 +1,12 @@
 import { createHelia } from "helia";
 import { json } from "@helia/json";
 import { unixfs } from "@helia/unixfs";
-import { PinataSDK } from "pinata";
-import { config } from "../config.js";
-import type { CID } from "multiformats/cid";
 
 let heliaNode: Awaited<ReturnType<typeof createHelia>> | null = null;
-let pinata: PinataSDK | null = null;
 
 export async function initIpfs(): Promise<void> {
   heliaNode = await createHelia();
-  console.log("Helia IPFS node started");
-
-  if (config.pinataJwt) {
-    pinata = new PinataSDK({ pinataJwt: config.pinataJwt, pinataGateway: config.pinataGateway });
-    console.log("Pinata SDK initialized");
-  }
+  console.log("Helia IPFS node started (local datastore)");
 }
 
 export async function writeBytes(data: Uint8Array): Promise<string> {
@@ -23,19 +14,7 @@ export async function writeBytes(data: Uint8Array): Promise<string> {
 
   const fs = unixfs(heliaNode);
   const cid = await fs.addBytes(data);
-  const cidStr = cid.toString();
-
-  if (pinata) {
-    try {
-      const blob = new Blob([data]);
-      const file = new File([blob], `engram-${cidStr}`, { type: "application/octet-stream" });
-      await pinata.upload.file(file);
-    } catch (err) {
-      console.error("Pinata pin failed (non-fatal):", err);
-    }
-  }
-
-  return cidStr;
+  return cid.toString();
 }
 
 export async function readBytes(cidStr: string): Promise<Uint8Array> {
