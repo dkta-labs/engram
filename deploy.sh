@@ -68,10 +68,11 @@ fi
 # ── Deploy ─────────────────────────────────────────────────────────
 log "=== Engram Deploy ==="
 
-# 1. Pull latest code
+# 1. Pull latest code — reset hard to avoid divergence from squash merges
 log "Pulling latest code..."
 cd "$REPO_DIR"
-GH_CONFIG_DIR=/home/hermes/.hermes/gh-config git pull origin main
+GH_CONFIG_DIR=/home/hermes/.hermes/gh-config git fetch origin main
+GH_CONFIG_DIR=/home/hermes/.hermes/gh-config git reset --hard origin/main
 
 # 2. Determine slots
 CURR_PORT=$(active_port)
