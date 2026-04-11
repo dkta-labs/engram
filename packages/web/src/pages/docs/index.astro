@@ -1,0 +1,502 @@
+---
+import Base from '../../layouts/Base.astro';
+import { Code } from 'astro:components';
+
+const quickStart = `import { EngramClient } from 'engram-sdk'
+
+const client = new EngramClient({
+  privateKey: '0x...',
+  network: 'base-sepolia',
+  apiUrl: 'https://engram.dkta.dev',
+})
+
+// Register once
+const { agentId } = await client.register()
+
+// Store a memory
+const { hash } = await client.store({
+  type: 'kv',
+  data: { userName: 'Alice', preference: 'dark mode' },
+  metadata: { tags: ['preferences'] },
+})
+
+// Retrieve it
+const { data } = await client.retrieve(hash)`;
+
+const authHeaderExample = `{
+  "sig": "0x...",
+  "agentId": 42,
+  "timestamp": 1714857600
+}`;
+
+const registerCurl = `curl -X POST https://engram.dkta.dev/v1/agent/register \\
+  -H "Content-Type: application/json" \\
+  -d '{"address": "0xYourWallet", "signature": "0x..."}'`;
+
+const registerResponse = `{
+  "agentId": 42,
+  "address": "0xYourWallet",
+  "txHash": "0x..."
+}`;
+
+const storeCurl = `curl -X POST https://engram.dkta.dev/v1/memory \\
+  -H "Content-Type: application/json" \\
+  -H 'X-Agent-Sig: {"sig":"0x...","agentId":42,"timestamp":1714857600}' \\
+  -H "X-Derive-Sig: 0x..." \\
+  -d '{"agentId": 42, "type": "kv", "data": {"key": "value"}}'`;
+
+const storeResponse = `{
+  "hash": "a1b2c3d4e5f6...",
+  "type": "kv"
+}`;
+
+const retrieveCurl = `curl https://engram.dkta.dev/v1/memory/a1b2c3d4e5f6... \\
+  -H 'X-Agent-Sig: {"sig":"0x...","agentId":42,"timestamp":1714857600}' \\
+  -H "X-Derive-Sig: 0x..."`;
+
+const retrieveResponse = `{
+  "hash": "a1b2c3d4e5f6...",
+  "data": {"key": "value"},
+  "metadata": null,
+  "type": "kv"
+}`;
+
+const healthResponse = `{
+  "status": "ok",
+  "version": "0.1.0",
+  "network": "base-sepolia",
+  "contractAddress": "0x..."
+}`;
+
+const sdkMethods = `const client = new EngramClient({
+  privateKey: '0x...',
+  network: 'base-sepolia',  // or 'base'
+  apiUrl: 'https://engram.dkta.dev',
+})
+
+// Register — creates on-chain agent identity
+const { agentId } = await client.register()
+
+// Set agent ID (if already registered)
+client.setAgentId(42)
+
+// Get agent info
+const info = await client.getAgent(42)
+
+// Store encrypted memory
+const { hash } = await client.store({
+  type: 'kv',           // 'blob' | 'kv' | 'text'
+  data: { key: 'val' },
+  metadata: { tags: ['example'] },
+})
+
+// Retrieve + decrypt
+const { data } = await client.retrieve(hash)
+
+// Read memory index
+const { index } = await client.getIndex()
+
+// Update memory index (stored encrypted, pointer on-chain)
+await client.updateIndex({ entries: [...] })
+
+// Health check
+const { status } = await client.health()`;
+
+const selfHost = `git clone https://github.com/dsr-restyn/engram
+cd engram
+cp .env.example .env
+# Fill in: SERVER_PRIVATE_KEY, PAYMENT_ADDRESS
+
+# Deploy contract
+cd packages/contracts
+npm install
+npx hardhat run scripts/deploy.ts --network base-sepolia
+# Copy CONTRACT_ADDRESS to .env
+
+# Run
+cd ../..
+docker-compose up -d`;
+---
+<Base title="Docs — Engram">
+  <div class="container docs">
+    <!-- TOC -->
+    <nav class="toc">
+      <a href="#overview">Overview</a>
+      <a href="#quickstart">Quick Start</a>
+      <a href="#auth">Authentication</a>
+      <a href="#api">API Reference</a>
+      <a href="#sdk">SDK</a>
+      <a href="#selfhost">Self-Hosting</a>
+    </nav>
+
+    <!-- Overview -->
+    <section id="overview">
+      <div class="section-label">Overview</div>
+      <p>
+        Engram is an encrypted persistent memory API for AI agents. Your agent's wallet is its identity &mdash;
+        no accounts, no API keys, no OAuth. Store and retrieve encrypted data, gated by
+        <a href="https://x402.org">x402</a> micropayments in USDC on Base.
+      </p>
+      <h3>How It Works</h3>
+      <ol>
+        <li>Agent signs a message with its private key to prove wallet ownership</li>
+        <li>An AES-256-GCM encryption key is derived from that signature via HKDF-SHA256</li>
+        <li>Data is encrypted and stored as content-addressed blobs (SHA-256 hash = address)</li>
+        <li>Agent registration is recorded on-chain via a lightweight smart contract on Base</li>
+        <li>Each paid operation uses x402 micropayments &mdash; USDC on Base, fractions of a cent</li>
+      </ol>
+      <p class="muted">The server never stores keys or signatures. Derive, use, discard.</p>
+    </section>
+
+    <!-- Quick Start -->
+    <section id="quickstart">
+      <div class="section-label">Quick Start</div>
+      <div class="code-block">
+        <Code code="npm install engram-sdk" lang="bash" theme="css-variables" />
+      </div>
+      <div class="code-block">
+        <Code code={quickStart} lang="typescript" theme="css-variables" />
+      </div>
+      <p class="muted">
+        Your agent needs USDC on Base Sepolia to pay for operations.
+        Get testnet USDC from the <a href="https://faucet.circle.com/">Circle faucet</a>.
+      </p>
+    </section>
+
+    <!-- Authentication -->
+    <section id="auth">
+      <div class="section-label">Authentication</div>
+      <p>
+        All authenticated routes require the <code>X-Agent-Sig</code> header &mdash; a JSON object
+        containing a wallet signature, agent ID, and timestamp:
+      </p>
+      <div class="code-block">
+        <Code code={authHeaderExample} lang="json" theme="css-variables" />
+      </div>
+      <p>
+        The signature is over: <code>keccak256("engram:auth:v1:" + agentId + ":" + timestamp)</code>
+      </p>
+      <p>Valid for 5 minutes. Prevents replay attacks.</p>
+
+      <h3>Encryption Key Derivation</h3>
+      <p>
+        Routes that read or write encrypted data also require the <code>X-Derive-Sig</code> header.
+        This is the agent's signature over <code>keccak256("engram:derive-key:v1:" + address)</code>.
+        The server derives an AES-256-GCM key from this signature via HKDF-SHA256, encrypts/decrypts
+        the data, and discards the key. The same wallet always derives the same key.
+      </p>
+      <p class="muted">
+        The SDK handles both headers automatically &mdash; you never construct them manually.
+      </p>
+    </section>
+
+    <!-- API Reference -->
+    <section id="api">
+      <div class="section-label">API Reference</div>
+
+      <!-- POST /v1/agent/register -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method post">POST</span>
+          <span class="route">/v1/agent/register</span>
+          <span class="price free">free</span>
+        </div>
+        <p>Register an agent wallet. Returns an on-chain agent ID. Server pays gas.</p>
+        <h4>Request Body</h4>
+        <div class="code-block">
+          <Code code={`{ "address": "0x...", "signature": "0x..." }`} lang="json" theme="css-variables" />
+        </div>
+        <p class="muted">Signature is over <code>keccak256("engram:register:v1:" + address)</code></p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <Code code={registerResponse} lang="json" theme="css-variables" />
+        </div>
+        <h4>curl</h4>
+        <div class="code-block">
+          <Code code={registerCurl} lang="bash" theme="css-variables" />
+        </div>
+      </div>
+
+      <!-- GET /v1/agent/:agentId -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method get">GET</span>
+          <span class="route">/v1/agent/:agentId</span>
+          <span class="price free">free</span>
+        </div>
+        <p>Get agent info. No auth required.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <Code code={`{ "agentId": 42, "owner": "0x...", "indexHash": "abc123..." }`} lang="json" theme="css-variables" />
+        </div>
+      </div>
+
+      <!-- GET /v1/agent/:agentId/index -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method get">GET</span>
+          <span class="route">/v1/agent/:agentId/index</span>
+          <span class="price">$0.0001</span>
+        </div>
+        <p>Retrieve and decrypt the agent's memory index. Requires <code>X-Agent-Sig</code> and <code>X-Derive-Sig</code>.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <Code code={`{ "agentId": 42, "hash": "abc123...", "index": { ... } }`} lang="json" theme="css-variables" />
+        </div>
+      </div>
+
+      <!-- PUT /v1/agent/:agentId/index -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method put">PUT</span>
+          <span class="route">/v1/agent/:agentId/index</span>
+          <span class="price">$0.0005</span>
+        </div>
+        <p>Update the agent's memory index. Encrypts, stores, and updates the on-chain pointer. Requires <code>X-Agent-Sig</code> and <code>X-Derive-Sig</code>.</p>
+        <h4>Request Body</h4>
+        <div class="code-block">
+          <Code code={`{ "indexDoc": { "entries": [...] } }`} lang="json" theme="css-variables" />
+        </div>
+        <h4>Response</h4>
+        <div class="code-block">
+          <Code code={`{ "hash": "def456...", "txHash": "0x..." }`} lang="json" theme="css-variables" />
+        </div>
+      </div>
+
+      <!-- POST /v1/memory -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method post">POST</span>
+          <span class="route">/v1/memory</span>
+          <span class="price">$0.001</span>
+        </div>
+        <p>Store an encrypted memory blob. Requires <code>X-Agent-Sig</code> and <code>X-Derive-Sig</code>.</p>
+        <h4>Request Body</h4>
+        <div class="code-block">
+          <Code code={`{ "agentId": 42, "type": "kv", "data": { "key": "value" }, "metadata": { "tags": ["example"] } }`} lang="json" theme="css-variables" />
+        </div>
+        <p class="muted">Type can be <code>"blob"</code>, <code>"kv"</code>, or <code>"text"</code>.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <Code code={storeResponse} lang="json" theme="css-variables" />
+        </div>
+        <h4>curl</h4>
+        <div class="code-block">
+          <Code code={storeCurl} lang="bash" theme="css-variables" />
+        </div>
+      </div>
+
+      <!-- GET /v1/memory/:hash -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method get">GET</span>
+          <span class="route">/v1/memory/:hash</span>
+          <span class="price">$0.0001</span>
+        </div>
+        <p>Retrieve and decrypt a memory by its content hash. Requires <code>X-Agent-Sig</code> and <code>X-Derive-Sig</code>.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <Code code={retrieveResponse} lang="json" theme="css-variables" />
+        </div>
+        <h4>curl</h4>
+        <div class="code-block">
+          <Code code={retrieveCurl} lang="bash" theme="css-variables" />
+        </div>
+      </div>
+
+      <!-- GET /v1/health -->
+      <div class="endpoint">
+        <div class="endpoint-header">
+          <span class="method get">GET</span>
+          <span class="route">/v1/health</span>
+          <span class="price free">free</span>
+        </div>
+        <p>Service status. No auth, no payment.</p>
+        <h4>Response</h4>
+        <div class="code-block">
+          <Code code={healthResponse} lang="json" theme="css-variables" />
+        </div>
+      </div>
+    </section>
+
+    <!-- SDK Reference -->
+    <section id="sdk">
+      <div class="section-label">SDK Reference</div>
+      <div class="code-block">
+        <Code code="npm install engram-sdk" lang="bash" theme="css-variables" />
+      </div>
+      <div class="code-block">
+        <Code code={sdkMethods} lang="typescript" theme="css-variables" />
+      </div>
+      <h3>PaymentRequiredError</h3>
+      <p>
+        Thrown when a paid endpoint returns HTTP 402. Contains a <code>requirements</code> array
+        with payment details (scheme, network, amount, payTo address, facilitator URL).
+        The SDK does not auto-pay &mdash; your agent must handle x402 payment flow.
+      </p>
+    </section>
+
+    <!-- Self-Hosting -->
+    <section id="selfhost">
+      <div class="section-label">Self-Hosting</div>
+      <div class="code-block">
+        <Code code={selfHost} lang="bash" theme="css-variables" />
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .docs {
+    max-width: 860px;
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-8);
+  }
+
+  /* TOC */
+  .toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: var(--space-7);
+  }
+
+  .toc a {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    transition: color var(--transition);
+  }
+
+  .toc a:hover {
+    color: var(--accent);
+  }
+
+  /* Sections */
+  section {
+    margin-bottom: var(--space-7);
+  }
+
+  section p {
+    font-size: 0.92rem;
+    color: var(--text);
+    line-height: 1.7;
+    margin-bottom: var(--space-3);
+  }
+
+  section p.muted {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  section ol {
+    padding-left: var(--space-4);
+    margin-bottom: var(--space-3);
+  }
+
+  section li {
+    font-size: 0.92rem;
+    line-height: 1.7;
+    margin-bottom: var(--space-1);
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    margin-top: var(--space-5);
+    margin-bottom: var(--space-3);
+    color: var(--text);
+  }
+
+  h4 {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-2);
+  }
+
+  code {
+    background: var(--bg-surface);
+    padding: 0.15rem 0.4rem;
+    border-radius: var(--radius);
+    font-size: 0.85em;
+  }
+
+  /* Code blocks */
+  .code-block {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-3);
+    overflow-x: auto;
+  }
+
+  .code-block :global(pre) {
+    background: transparent !important;
+    margin: 0;
+    padding: 0;
+  }
+
+  .code-block :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    background: none;
+    padding: 0;
+  }
+
+  /* Endpoints */
+  .endpoint {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+
+  .endpoint p {
+    margin-bottom: var(--space-2);
+  }
+
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  .method {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius);
+  }
+
+  .method.get { background: rgba(0, 255, 148, 0.1); color: var(--success); }
+  .method.post { background: rgba(124, 106, 247, 0.1); color: var(--accent-soft); }
+  .method.put { background: rgba(251, 191, 36, 0.1); color: #fbbf24; }
+
+  .route {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  .price {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: #4fc3f7;
+    margin-left: auto;
+  }
+
+  .price.free {
+    color: var(--text-muted);
+  }
+</style>
