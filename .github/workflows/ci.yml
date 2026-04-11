@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Lint, typecheck & test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: engram_test
+          POSTGRES_USER: engram
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: |
+            packages/api/package-lock.json
+            packages/sdk/package-lock.json
+            packages/contracts/package-lock.json
+
+      - name: Install API deps
+        run: npm ci
+        working-directory: packages/api
+
+      - name: Install SDK deps
+        run: npm ci
+        working-directory: packages/sdk
+
+      - name: Typecheck API
+        run: npx tsc --noEmit
+        working-directory: packages/api
+
+      - name: Typecheck SDK
+        run: npx tsc --noEmit
+        working-directory: packages/sdk
+
+      - name: Build API
+        run: npm run build
+        working-directory: packages/api
+
+      - name: Build SDK
+        run: npm run build
+        working-directory: packages/sdk
+
+      - name: Test contracts
+        run: |
+          npm ci
+          npx hardhat test
+        working-directory: packages/contracts
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/hermes/engram
+            bash deploy.sh
+          script_stop: true
+          timeout: 300s
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          STATUS=$(curl -sf https://engram.dkta.dev/v1/health | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
+          if [ "$STATUS" != "ok" ]; then
+            echo "Health check failed: $STATUS"
+            exit 1
+          fi
+          echo "Deployment verified: $STATUS"
