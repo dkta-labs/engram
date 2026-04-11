@@ -1,0 +1,86 @@
+---
+---
+<header>
+  <div class="container header-inner">
+    <a class="logo" href="/">
+      <svg class="logo-mark" width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M16 2L28.66 9.5V24.5L16 30L3.34 24.5V9.5L16 2Z" stroke="url(#logo-grad)" stroke-width="1.5" fill="none"/>
+        <defs>
+          <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32">
+            <stop offset="0%" stop-color="var(--accent)"/>
+            <stop offset="100%" stop-color="#4fc3f7"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <span class="logo-text">engram</span>
+    </a>
+    <nav>
+      <a href="/docs">Docs</a>
+      <a href="/v1/health" class="mono">Status</a>
+      <span class="badge">ALPHA</span>
+    </nav>
+  </div>
+</header>
+
+<style>
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--border);
+    background: rgba(14, 14, 19, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    color: var(--text);
+  }
+
+  .logo:hover { color: var(--text); }
+
+  .logo-text {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  nav a {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    transition: color var(--transition);
+  }
+
+  nav a:hover {
+    color: var(--text);
+  }
+
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+    background: rgba(124, 106, 247, 0.15);
+    border: 1px solid rgba(124, 106, 247, 0.3);
+    color: var(--accent);
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+  }
+</style>
