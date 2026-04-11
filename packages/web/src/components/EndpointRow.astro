@@ -1,0 +1,62 @@
+---
+interface Props {
+  method: 'GET' | 'POST' | 'PUT';
+  route: string;
+  price: string;
+  description: string;
+}
+
+const { method, route, price, description } = Astro.props;
+const methodClass = method.toLowerCase();
+const isFree = price === 'free';
+---
+<tr>
+  <td><span class={`method ${methodClass}`}>{method}</span></td>
+  <td><span class="route">{route}</span></td>
+  <td><span class={`price ${isFree ? 'free' : ''}`}>{price}</span></td>
+  <td>{description}</td>
+</tr>
+
+<style>
+  td {
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.82rem;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.015);
+  }
+
+  .method {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius);
+  }
+
+  .method.get { background: rgba(0, 255, 148, 0.1); color: var(--success); }
+  .method.post { background: rgba(124, 106, 247, 0.1); color: var(--accent-soft); }
+  .method.put { background: rgba(251, 191, 36, 0.1); color: #fbbf24; }
+
+  .route {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+  }
+
+  .price {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: #4fc3f7;
+  }
+
+  .price.free {
+    color: var(--text-muted);
+  }
+</style>
