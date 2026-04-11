@@ -29,7 +29,7 @@ switch_caddy() {
   local new_port=$1
   log "Switching Caddy upstream to port $new_port..."
   # Path: routes[0] > handle[0](subroute) > routes[0] > handle[2](reverse_proxy) > upstreams
-  curl -sf -X PATCH \
+  curl -sf -4 -X PATCH \
     "$CADDY_API/config/apps/http/servers/srv0/routes/0/handle/0/routes/0/handle/2/upstreams" \
     -H "Content-Type: application/json" \
     -d "[{\"dial\": \"localhost:${new_port}\"}]" || die "Failed to switch Caddy upstream"
@@ -37,7 +37,7 @@ switch_caddy() {
 }
 
 active_port() {
-  curl -sf \
+  curl -sf -4 \
     "$CADDY_API/config/apps/http/servers/srv0/routes/0/handle/0/routes/0/handle/2/upstreams/0/dial" \
     2>/dev/null | tr -d '"' | cut -d: -f2 || echo "3000"
 }
