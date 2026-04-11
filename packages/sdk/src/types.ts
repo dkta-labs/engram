@@ -18,6 +18,9 @@ export interface StoreRequest {
   type: "blob" | "kv" | "text";
   data: unknown;
   metadata?: Record<string, unknown>;
+  embedding?: number[];
+  embeddingModel?: string;
+  embeddingDim?: number;
 }
 
 export interface StoreResponse {
@@ -30,6 +33,12 @@ export interface RetrieveResponse {
   data: unknown;
   metadata: Record<string, unknown> | null;
   type: string;
+}
+
+export interface SearchRequest {
+  agentId: number;
+  queryEmbedding: number[];
+  topK?: number;
 }
 
 export interface SearchResult {

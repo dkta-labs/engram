@@ -10,7 +10,6 @@ export const config = {
   pinataJwt: process.env.PINATA_JWT || "",
   pinataGateway: process.env.PINATA_GATEWAY || "gateway.pinata.cloud",
   databaseUrl: process.env.DATABASE_URL || "postgresql://engram:engram@localhost:5432/engram",
-  openaiApiKey: process.env.OPENAI_API_KEY || "",
   baseSepoliaRpc: process.env.BASE_SEPOLIA_RPC || "https://sepolia.base.org",
 } as const;
 

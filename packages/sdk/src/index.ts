@@ -5,6 +5,7 @@ export type {
   StoreRequest,
   StoreResponse,
   RetrieveResponse,
+  SearchRequest,
   SearchResult,
   SearchResponse,
   RegisterResponse,

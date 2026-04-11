@@ -129,11 +129,11 @@ export class EngramClient {
     return this.request<RetrieveResponse>("GET", `/v1/memory/${cid}`, undefined, true);
   }
 
-  async search(query: string, topK?: number): Promise<SearchResponse> {
+  async search(queryEmbedding: number[], topK?: number): Promise<SearchResponse> {
     if (!this.agentId) throw new Error("Not registered. Call register() or setAgentId() first.");
     return this.request<SearchResponse>("POST", "/v1/memory/search", {
       agentId: this.agentId,
-      query,
+      queryEmbedding,
       topK,
     }, true);
   }
