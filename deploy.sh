@@ -93,6 +93,8 @@ sudo docker build -t engram-api:candidate ./packages/api \
 
 # 4. Stop any previous candidate container on this slot
 sudo docker rm -f "engram-api-${NEW_PORT}" 2>/dev/null || true
+# Also clean up any compose-managed container that may be on this port
+sudo docker rm -f "engram-api-1" 2>/dev/null || true
 
 # 5. Start new container on new port
 log "Starting $NEW_SLOT container on :$NEW_PORT..."
@@ -128,6 +130,8 @@ sleep 10
 log "Stopping old $CURR_SLOT container..."
 sudo docker stop "engram-api-${CURR_PORT}" 2>/dev/null || true
 sudo docker rm "engram-api-${CURR_PORT}" 2>/dev/null || true
+# Also stop the compose-managed container if it was the active one
+sudo docker rm -f "engram-api-1" 2>/dev/null || true
 
 # 10. Tag candidate as latest
 sudo docker tag engram-api:candidate engram-api:latest
