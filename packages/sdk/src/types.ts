@@ -1,17 +1,10 @@
-export interface PaymentRequirement {
-  scheme: string;
-  network: string;
-  maxAmountRequired: string;
-  resource: string;
-  description: string;
-  payTo: string;
-  facilitatorUrl: string;
-}
-
 export interface EngramClientConfig {
-  privateKey: string;
-  network: "base-sepolia" | "base";
+  /** Base URL for the Engram API */
   apiUrl: string;
+  /** Agent wallet private key (hex, 0x-prefixed) — used for auth signatures and x402 payments */
+  privateKey: string;
+  /** Network for x402 payments (default: "base-sepolia") */
+  network?: "base-sepolia" | "base";
 }
 
 export interface StoreRequest {

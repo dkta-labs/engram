@@ -1,7 +1,6 @@
-export { EngramClient, PaymentRequiredError } from "./client.js";
+export { EngramClient, EngramAuthError, EngramPaymentError, EngramIntegrityError } from "./client.js";
 export type {
   EngramClientConfig,
-  PaymentRequirement,
   StoreRequest,
   StoreResponse,
   RetrieveResponse,
