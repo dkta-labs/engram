@@ -54,7 +54,7 @@ switch_caddy() {
   curl -sf -4 -X PATCH \
     "${CADDY_API}${upstream_path}" \
     -H "Content-Type: application/json" \
-    -d "[{\"dial\": \"localhost:${new_port}\"}]" || die "Failed to switch Caddy upstream"
+    -d "[{\"dial\": \"127.0.0.1:${new_port}\"}]" || die "Failed to switch Caddy upstream"
   log "Caddy now pointing to :$new_port"
 }
 
