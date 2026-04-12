@@ -24,7 +24,7 @@ engram.dkta.dev {
 
 	# API routes → Express container
 	handle /v1/* {
-		reverse_proxy localhost:3000 {
+		reverse_proxy 127.0.0.1:3000 {
 			health_uri /v1/health
 			health_interval 30s
 			transport http {

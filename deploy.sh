@@ -56,6 +56,13 @@ switch_caddy() {
     -H "Content-Type: application/json" \
     -d "[{\"dial\": \"127.0.0.1:${new_port}\"}]" || die "Failed to switch Caddy upstream"
   log "Caddy now pointing to :$new_port"
+
+  # Keep /etc/caddy/Caddyfile in sync so disk matches live config.
+  # Without this, a caddy reload/restart would revert to the old port.
+  if [[ -f /etc/caddy/Caddyfile ]]; then
+    sudo sed -i "s|reverse_proxy 127\.0\.0\.1:[0-9]\+|reverse_proxy 127.0.0.1:${new_port}|g" /etc/caddy/Caddyfile
+    log "Updated /etc/caddy/Caddyfile → reverse_proxy 127.0.0.1:${new_port}"
+  fi
 }
 
 active_port() {
