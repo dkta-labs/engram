@@ -13,6 +13,7 @@ import {
 } from "../services/crypto.js";
 import * as registry from "../services/registry.js";
 import * as blobstore from "../services/blobstore.js";
+import { enqueueRegister, enqueueUpdateIndex } from "../services/writeQueue.js";
 
 const router = Router();
 
@@ -34,7 +35,7 @@ router.post("/register", async (req: Request, res: Response) => {
       return;
     }
 
-    const { agentId, txHash } = await registry.registerAgent(recoveredAddress);
+    const { agentId, txHash } = await enqueueRegister(recoveredAddress);
 
     res.json({
       agentId: Number(agentId),
@@ -42,7 +43,12 @@ router.post("/register", async (req: Request, res: Response) => {
       txHash,
     });
   } catch (err) {
-    res.status(500).json({ error: "Registration failed", details: String(err) });
+    const msg = String(err);
+    if (msg.includes("Write queue full")) {
+      res.status(503).json({ error: msg });
+      return;
+    }
+    res.status(500).json({ error: "Registration failed", details: msg });
   }
 });
 
@@ -122,11 +128,16 @@ router.put("/:agentId/index", agentAuth, async (req: Request, res: Response) => 
     const serialized = serializeEncrypted(encrypted);
 
     const hash = await blobstore.writeBlob(serialized);
-    const txHash = await registry.updateIndex(agentId, hash);
+    const txHash = await enqueueUpdateIndex(agentId, hash);
 
     res.json({ hash, txHash });
   } catch (err) {
-    res.status(500).json({ error: "Failed to update index", details: String(err) });
+    const msg = String(err);
+    if (msg.includes("Write queue full")) {
+      res.status(503).json({ error: msg });
+      return;
+    }
+    res.status(500).json({ error: "Failed to update index", details: msg });
   }
 });
 

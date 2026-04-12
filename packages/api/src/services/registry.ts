@@ -16,8 +16,8 @@ export function initRegistry(): void {
   console.log("Registry initialized on", config.network);
 }
 
-export async function registerAgent(ownerAddress: string): Promise<{ agentId: bigint; txHash: string }> {
-  const tx = await contract.register(ownerAddress);
+export async function registerAgent(ownerAddress: string, txOptions: object = {}): Promise<{ agentId: bigint; txHash: string }> {
+  const tx = await contract.register(ownerAddress, txOptions);
   const receipt = await tx.wait();
 
   const event = receipt.logs.find(
@@ -50,10 +50,18 @@ export async function getIndex(agentId: number): Promise<string> {
   return contract.getIndex(agentId);
 }
 
-export async function updateIndex(agentId: number, cid: string): Promise<string> {
-  const tx = await contract.updateIndex(agentId, cid);
+export async function updateIndex(agentId: number, cid: string, txOptions: object = {}): Promise<string> {
+  const tx = await contract.updateIndex(agentId, cid, txOptions);
   const receipt = await tx.wait();
   return receipt.hash as string;
+}
+
+export function getServerWallet(): ethers.Wallet {
+  return serverWallet;
+}
+
+export function getProvider(): ethers.JsonRpcProvider {
+  return provider;
 }
 
 export function getContract(): ethers.Contract {

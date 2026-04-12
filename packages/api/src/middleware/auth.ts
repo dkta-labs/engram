@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
+import { ethers } from "ethers";
 import { getAuthMessage, verifySignature } from "../services/crypto.js";
 import { getAgentOwner } from "../services/registry.js";
+import { getCachedOwner, setCachedOwner } from "../services/ownerCache.js";
 
 declare global {
   namespace Express {
@@ -45,7 +47,13 @@ export async function agentAuth(req: Request, res: Response, next: NextFunction)
     const message = getAuthMessage(agentId, timestamp);
     const recoveredAddress = verifySignature(message, sig);
 
-    const ownerAddress = await getAgentOwner(agentId);
+    let ownerAddress = getCachedOwner(agentId);
+    if (!ownerAddress) {
+      ownerAddress = await getAgentOwner(agentId);
+      if (ownerAddress !== ethers.ZeroAddress) {
+        setCachedOwner(agentId, ownerAddress);
+      }
+    }
     if (ownerAddress.toLowerCase() !== recoveredAddress.toLowerCase()) {
       res.status(403).json({ error: "Signature does not match agent owner" });
       return;

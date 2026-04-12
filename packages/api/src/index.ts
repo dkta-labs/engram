@@ -4,6 +4,7 @@ import morgan from "morgan";
 import { config } from "./config.js";
 import { createPaymentMiddleware } from "./middleware/payment.js";
 import { initRegistry } from "./services/registry.js";
+import { startWriteQueue } from "./services/writeQueue.js";
 import agentRoutes from "./routes/agent.js";
 import memoryRoutes from "./routes/memory.js";
 import statsRoutes from "./routes/stats.js";
@@ -36,6 +37,7 @@ async function start(): Promise<void> {
   console.log("Initializing services...");
 
   initRegistry();
+  startWriteQueue();
 
   app.listen(config.port, () => {
     console.log(`Engram API listening on port ${config.port}`);
