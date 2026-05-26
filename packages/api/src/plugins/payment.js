@@ -14,12 +14,14 @@ const facilitator = {
 }
 
 // x402 route price map
+// x402 shared uses glob-style patterns: * = wildcard (maps to .*?)
+// List /memories/search BEFORE /memories/* so search gets its own price.
 export const PRICES = {
-  'POST /memories':       { price: '$0.001',  network: NETWORK, config: { description: 'Write a memory' } },
+  'POST /memories':    { price: '$0.001',  network: NETWORK, config: { description: 'Write a memory' } },
   'GET /memories/search': { price: '$0.001',  network: NETWORK, config: { description: 'Search memories (FTS)' } },
-  'GET /memories/:id':    { price: '$0.0001', network: NETWORK, config: { description: 'Read a memory by ID' } },
-  'PATCH /memories/:id':  { price: '$0.001',  network: NETWORK, config: { description: 'Update a memory' } },
-  'DELETE /memories/:id': { price: '$0.0001', network: NETWORK, config: { description: 'Delete a memory' } },
+  'GET /memories/*':   { price: '$0.0001', network: NETWORK, config: { description: 'Read a memory by ID' } },
+  'PATCH /memories/*': { price: '$0.001',  network: NETWORK, config: { description: 'Update a memory' } },
+  'DELETE /memories/*':{ price: '$0.0001', network: NETWORK, config: { description: 'Delete a memory' } },
 }
 
 // Paths that bypass x402 payment
