@@ -25,7 +25,7 @@ export const PRICES = {
 }
 
 // Paths that bypass x402 payment
-const FREE_PATHS = new Set(['/health', '/.well-known/x402.json', '/openapi.json', '/llms.txt'])
+const FREE_PATHS = new Set(['/health', '/.well-known/x402.json', '/.well-known/ai-plugin.json', '/openapi.json', '/llms.txt'])
 
 // CORS headers that must appear on every 402 response so browser agents can read the challenge
 const CORS_HEADERS = {

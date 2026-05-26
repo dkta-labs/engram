@@ -296,6 +296,22 @@ export default async function discoveryRoutes(fastify) {
     }
   }))
 
+  fastify.get('/.well-known/ai-plugin.json', async (req, reply) => {
+    reply.header('Access-Control-Allow-Origin', '*')
+    return {
+      schema_version: 'v1',
+      name_for_human: 'Engram — Agent Memory API',
+      name_for_model: 'engram',
+      description_for_human: 'Persistent memory for AI agents. Write, search, and recall memories. Pay $0.001 USDC per operation via x402 on Base. No accounts — wallet-as-identity.',
+      description_for_model: 'Persistent key-value + FTS memory store for agents. POST /memories to write, GET /memories/search?q= to recall, PATCH /memories/:id to update. Requires x402 micropayment of $0.001 USDC on Base mainnet. Payer wallet address is the user identity — memories are private to each wallet by default.',
+      auth: { type: 'none' },
+      api: { type: 'openapi', url: 'https://engram.dkta.dev/openapi.json' },
+      logo_url: 'https://engram.dkta.dev/logo.png',
+      contact_email: 'hi@dkta.dev',
+      legal_info_url: 'https://dkta.dev',
+    }
+  })
+
   fastify.get('/llms.txt', {
     config: { rawReply: true }
   }, async (req, reply) => {
