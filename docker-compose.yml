@@ -25,6 +25,8 @@ services:
     env_file: ./packages/api/.env
     ports:
       - "127.0.0.1:3099:3000"
+    volumes:
+      - ./logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy

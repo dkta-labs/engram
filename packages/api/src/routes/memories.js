@@ -1,3 +1,5 @@
+import { logRequest, umamiEvent } from '../logger.js'
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function validateUuid(id, reply) {
@@ -21,6 +23,8 @@ export default async function memoriesRoutes(fastify) {
       VALUES (${content}, ${tags}, ${project ?? null}, ${agent_id ?? null}, ${visibility}, ${req.payerAddress})
       RETURNING id, content, tags, project, agent_id, visibility, owner_address, created_at
     `
+    logRequest({ event: 'write', wallet: req.payerAddress, project: project ?? null, visibility, paid: true })
+    umamiEvent('memory-write', { status: 201, paid: true, visibility })
     return reply.code(201).send(memory)
   })
 
@@ -42,6 +46,8 @@ export default async function memoriesRoutes(fastify) {
       WHERE id = ${req.params.id}
       RETURNING id, content, tags, project, agent_id, visibility, owner_address, created_at, updated_at
     `
+    logRequest({ event: 'update', wallet: req.payerAddress, id: req.params.id, paid: true })
+    umamiEvent('memory-update', { status: 200, paid: true })
     return updated
   })
 
@@ -65,6 +71,8 @@ export default async function memoriesRoutes(fastify) {
       ORDER BY rank DESC, created_at DESC
       LIMIT ${lim} OFFSET ${off}
     `
+    logRequest({ event: 'search', wallet: req.payerAddress, q, results: results.length, paid: true })
+    umamiEvent('memory-search', { status: 200, paid: true, results: results.length })
     return { results, count: results.length, offset: off }
   })
 
@@ -79,6 +87,8 @@ export default async function memoriesRoutes(fastify) {
     if (memory.visibility === 'private' && memory.owner_address !== req.payerAddress) {
       return reply.code(404).send({ error: 'Not found' })
     }
+    logRequest({ event: 'read', wallet: req.payerAddress, id: req.params.id, paid: true })
+    umamiEvent('memory-read', { status: 200, paid: true })
     return memory
   })
 
@@ -89,6 +99,8 @@ export default async function memoriesRoutes(fastify) {
       DELETE FROM memories WHERE id = ${req.params.id} AND owner_address = ${req.payerAddress}
     `
     if (result.count === 0) return reply.code(404).send({ error: 'Not found or not yours' })
+    logRequest({ event: 'delete', wallet: req.payerAddress, id: req.params.id, paid: true })
+    umamiEvent('memory-delete', { status: 204, paid: true })
     return reply.code(204).send()
   })
 }
