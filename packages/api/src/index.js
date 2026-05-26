@@ -11,7 +11,10 @@ const fastify = Fastify({ logger: true })
 
 fastify.decorate('sql', sql)
 
-await fastify.register(cors, { origin: true })
+await fastify.register(cors, {
+  origin: true,
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+})
 await fastify.register(rateLimit, {
   max: Number(process.env.RATE_LIMIT_MAX ?? 200),
   timeWindow: Number(process.env.RATE_LIMIT_WINDOW ?? 60000),

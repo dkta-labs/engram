@@ -31,7 +31,7 @@ const FREE_PATHS = new Set(['/health', '/.well-known/x402.json', '/openapi.json'
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'content-type,x-payment,payment-signature,authorization',
-  'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE',
 }
 
 /**
