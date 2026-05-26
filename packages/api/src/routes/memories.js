@@ -1,3 +1,13 @@
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function validateUuid(id, reply) {
+  if (!UUID_RE.test(id)) {
+    reply.code(400).send({ error: 'Invalid id format' })
+    return false
+  }
+  return true
+}
+
 export default async function memoriesRoutes(fastify) {
   // POST /memories
   fastify.post('/memories', async (req, reply) => {
@@ -16,6 +26,7 @@ export default async function memoriesRoutes(fastify) {
 
   // PATCH /memories/:id
   fastify.patch('/memories/:id', async (req, reply) => {
+    if (!validateUuid(req.params.id, reply)) return
     const { content, tags, project, agent_id, visibility } = req.body ?? {}
     const [existing] = await fastify.sql`SELECT id, owner_address FROM memories WHERE id = ${req.params.id}`
     if (!existing) return reply.code(404).send({ error: 'Not found' })
@@ -59,6 +70,7 @@ export default async function memoriesRoutes(fastify) {
 
   // GET /memories/:id
   fastify.get('/memories/:id', async (req, reply) => {
+    if (!validateUuid(req.params.id, reply)) return
     const [memory] = await fastify.sql`
       SELECT id, content, tags, project, agent_id, visibility, owner_address, created_at, updated_at
       FROM memories WHERE id = ${req.params.id}
@@ -72,6 +84,7 @@ export default async function memoriesRoutes(fastify) {
 
   // DELETE /memories/:id
   fastify.delete('/memories/:id', async (req, reply) => {
+    if (!validateUuid(req.params.id, reply)) return
     const result = await fastify.sql`
       DELETE FROM memories WHERE id = ${req.params.id} AND owner_address = ${req.payerAddress}
     `
