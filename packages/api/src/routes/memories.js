@@ -1,0 +1,81 @@
+export default async function memoriesRoutes(fastify) {
+  // POST /memories
+  fastify.post('/memories', async (req, reply) => {
+    const { content, tags = [], project, agent_id, visibility = 'private' } = req.body ?? {}
+    if (!content?.trim()) return reply.code(400).send({ error: 'content is required' })
+    if (!['public', 'private'].includes(visibility)) {
+      return reply.code(400).send({ error: 'visibility must be public or private' })
+    }
+    const [memory] = await fastify.sql`
+      INSERT INTO memories (content, tags, project, agent_id, visibility, owner_address)
+      VALUES (${content}, ${tags}, ${project ?? null}, ${agent_id ?? null}, ${visibility}, ${req.payerAddress})
+      RETURNING id, content, tags, project, agent_id, visibility, owner_address, created_at
+    `
+    return reply.code(201).send(memory)
+  })
+
+  // PATCH /memories/:id
+  fastify.patch('/memories/:id', async (req, reply) => {
+    const { content, tags, project, agent_id, visibility } = req.body ?? {}
+    const [existing] = await fastify.sql`SELECT id, owner_address FROM memories WHERE id = ${req.params.id}`
+    if (!existing) return reply.code(404).send({ error: 'Not found' })
+    if (existing.owner_address !== req.payerAddress) return reply.code(403).send({ error: 'Forbidden' })
+    const [updated] = await fastify.sql`
+      UPDATE memories SET
+        content    = COALESCE(${content ?? null}, content),
+        tags       = COALESCE(${tags ?? null}, tags),
+        project    = COALESCE(${project ?? null}, project),
+        agent_id   = COALESCE(${agent_id ?? null}, agent_id),
+        visibility = COALESCE(${visibility ?? null}, visibility),
+        updated_at = now()
+      WHERE id = ${req.params.id}
+      RETURNING id, content, tags, project, agent_id, visibility, owner_address, created_at, updated_at
+    `
+    return updated
+  })
+
+  // GET /memories/search — MUST come before /:id
+  fastify.get('/memories/search', async (req, reply) => {
+    const { q, project, agent_id, limit = 20, offset = 0 } = req.query
+    if (!q?.trim()) return reply.code(400).send({ error: 'q is required' })
+    const lim = Math.min(Number(limit), 100)
+    const off = Number(offset)
+    const results = await fastify.sql`
+      SELECT id, content, tags, project, agent_id, visibility, owner_address, created_at,
+             ts_rank(tsv, query) AS rank
+      FROM memories, plainto_tsquery('english', ${q}) query
+      WHERE tsv @@ query
+        AND (
+          visibility = 'public'
+          OR (visibility = 'private' AND owner_address = ${req.payerAddress})
+        )
+        ${project  ? fastify.sql`AND project  = ${project}`  : fastify.sql``}
+        ${agent_id ? fastify.sql`AND agent_id = ${agent_id}` : fastify.sql``}
+      ORDER BY rank DESC, created_at DESC
+      LIMIT ${lim} OFFSET ${off}
+    `
+    return { results, count: results.length, offset: off }
+  })
+
+  // GET /memories/:id
+  fastify.get('/memories/:id', async (req, reply) => {
+    const [memory] = await fastify.sql`
+      SELECT id, content, tags, project, agent_id, visibility, owner_address, created_at, updated_at
+      FROM memories WHERE id = ${req.params.id}
+    `
+    if (!memory) return reply.code(404).send({ error: 'Not found' })
+    if (memory.visibility === 'private' && memory.owner_address !== req.payerAddress) {
+      return reply.code(404).send({ error: 'Not found' })
+    }
+    return memory
+  })
+
+  // DELETE /memories/:id
+  fastify.delete('/memories/:id', async (req, reply) => {
+    const result = await fastify.sql`
+      DELETE FROM memories WHERE id = ${req.params.id} AND owner_address = ${req.payerAddress}
+    `
+    if (result.count === 0) return reply.code(404).send({ error: 'Not found or not yours' })
+    return reply.code(204).send()
+  })
+}

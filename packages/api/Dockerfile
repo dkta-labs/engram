@@ -1,29 +1,8 @@
-FROM node:22-slim AS builder
-
+FROM node:20-alpine
 WORKDIR /app
-
-COPY package.json tsconfig.json ./
-RUN npm install
-
+COPY package*.json ./
+RUN npm ci --omit=dev
 COPY src ./src
-RUN npm run build
-
-FROM node:22-slim
-
-WORKDIR /app
-
-COPY package.json ./
-RUN npm install --omit=dev
-
-COPY --from=builder /app/dist ./dist
-
-# Run as non-root
-RUN addgroup --system --gid 1001 engram && \
-    adduser --system --uid 1001 --ingroup engram engram && \
-    chown -R engram:engram /app
-
-USER engram
-
 EXPOSE 3000
-
-CMD ["node", "dist/index.js"]
+USER node
+CMD ["node", "src/index.js"]
