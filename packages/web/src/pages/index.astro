@@ -4,37 +4,39 @@ import FeatureCard from '../components/FeatureCard.astro';
 import EndpointRow from '../components/EndpointRow.astro';
 import { Code } from 'astro:components';
 
-const codeExample = `import { EngramClient } from 'engram-sdk'
+const codeExample = `import { withPaymentInterceptor } from 'x402-fetch'
 
-const client = new EngramClient({
-  privateKey: process.env.AGENT_KEY,
-  network: 'base-sepolia',
-  apiUrl: 'https://engram.dkta.dev',
+const fetch402 = withPaymentInterceptor(fetch, wallet)
+
+// Write a memory
+const res = await fetch402('https://engram.dkta.dev/memories', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    content: 'User prefers concise responses.',
+    tags: ['preference'],
+  }),
 })
 
-// register once, store forever
-const { agentId } = await client.register()
-
-const { hash } = await client.store({
-  type: 'kv',
-  data: { preference: 'dark mode' },
-})
-
-const { data } = await client.retrieve(hash)`;
+// Search memories
+const results = await fetch402(
+  'https://engram.dkta.dev/memories/search?q=preference'
+)`;
 ---
-<Base title="Engram — Encrypted Memory for AI Agents">
+<Base title="Engram — Agent Memory API">
   <!-- Hero -->
   <section class="hero">
     <div class="container">
       <div class="eyebrow">engram.dkta.dev</div>
-      <h1>Encrypted memory<br/>for AI agents</h1>
+      <h1>Memory API for<br/>autonomous agents</h1>
       <p class="subtitle">
-        Persistent encrypted storage, gated by x402 micropayments.
-        No accounts. No API keys. Just a wallet and USDC on Base.
+        Write, search, and recall memories — pay per operation with your wallet.
+        No accounts. No API keys. Your wallet address is your identity.
       </p>
       <div class="status-row">
-        <div class="status-item"><div class="dot"></div><span>API live on Base Sepolia</span></div>
-        <div class="status-item"><div class="dot"></div><span>SDK available</span></div>
+        <div class="status-item"><div class="dot"></div><span>Live on Base mainnet</span></div>
+        <div class="status-item"><div class="dot"></div><span>x402 payments</span></div>
+        <div class="status-item"><div class="dot"></div><span>FTS search</span></div>
       </div>
     </div>
   </section>
@@ -47,6 +49,7 @@ const { data } = await client.retrieve(hash)`;
           <div class="code-dot" style="background:#ff5f57"></div>
           <div class="code-dot" style="background:#febc2e"></div>
           <div class="code-dot" style="background:#28c840"></div>
+          <span class="code-filename">agent.ts</span>
         </div>
         <div class="code-body">
           <Code code={codeExample} lang="typescript" theme="css-variables" />
@@ -60,18 +63,18 @@ const { data } = await client.retrieve(hash)`;
     <div class="container">
       <div class="section-label">Why Engram</div>
       <div class="feature-grid">
-        <FeatureCard icon="&#128272;" title="Wallet-as-identity" description="Your wallet is your identity. AES-256-GCM keys derived from your signature. No key escrow, no third-party access." />
-        <FeatureCard icon="&#x2B21;" title="Content-addressed storage" description="Every memory is encrypted and stored by its SHA-256 hash. Integrity-verified on every read." />
-        <FeatureCard icon="&#9889;" title="x402 micropayments" description="Pay per operation in USDC on Base. No subscriptions, no accounts. Fractions of a cent per call." />
-        <FeatureCard icon="&#x26D3;" title="On-chain registry" description="Agent registration on Base. Your identity and memory index live on-chain, accessible from anywhere." />
-        <FeatureCard icon="&#129302;" title="Agent-native" description="Designed for autonomous operation. No human-in-the-loop, no checkout flows, no browser required." />
-        <FeatureCard icon="&#127760;" title="Any agent, anywhere" description="Any EVM wallet. Any HTTP client. TypeScript SDK included, or call the API from any language." />
+        <FeatureCard icon="&#128273;" title="Wallet-as-identity" description="Your wallet address from the x402 payment is your user ID. No signup, no keys, no sessions." />
+        <FeatureCard icon="&#128269;" title="Full-text search" description="Postgres tsvector search over all your memories. Fast, accurate, no embedding costs." />
+        <FeatureCard icon="&#9889;" title="x402 micropayments" description="Pay per operation in USDC on Base. Fractions of a cent per call. No subscriptions." />
+        <FeatureCard icon="&#128274;" title="Private by default" description="Memories are private to your wallet. Opt into public sharing per memory." />
+        <FeatureCard icon="&#129302;" title="Agent-native" description="Designed for autonomous operation. Any HTTP client, any language, any agent framework." />
+        <FeatureCard icon="&#9999;" title="Correctable" description="PATCH your memories as context evolves. Agents that can self-correct are agents that learn." />
       </div>
     </div>
   </section>
 
-  <!-- API Table -->
-  <section class="api-section">
+  <!-- Endpoints -->
+  <section class="endpoints">
     <div class="container">
       <div class="section-label">API Reference</div>
       <div class="table-wrap">
@@ -85,16 +88,23 @@ const { data } = await client.retrieve(hash)`;
             </tr>
           </thead>
           <tbody>
-            <EndpointRow method="POST" route="/v1/agent/register" price="free" description="Register agent wallet, receive agentId" />
-            <EndpointRow method="GET" route="/v1/agent/:id" price="free" description="Get agent info" />
-            <EndpointRow method="GET" route="/v1/agent/:id/index" price="$0.0001" description="Retrieve decrypted memory index" />
-            <EndpointRow method="PUT" route="/v1/agent/:id/index" price="$0.0005" description="Update memory index on-chain" />
-            <EndpointRow method="POST" route="/v1/memory" price="$0.001" description="Store encrypted memory" />
-            <EndpointRow method="GET" route="/v1/memory/:hash" price="$0.0001" description="Retrieve + decrypt memory by hash" />
-            <EndpointRow method="GET" route="/v1/health" price="free" description="Service status + contract address" />
+            <EndpointRow method="POST"   route="/memories"          price="$0.001"  description="Write a memory" />
+            <EndpointRow method="GET"    route="/memories/search"   price="$0.001"  description="Full-text search" />
+            <EndpointRow method="GET"    route="/memories/:id"      price="$0.0001" description="Read by ID" />
+            <EndpointRow method="PATCH"  route="/memories/:id"      price="$0.001"  description="Update own memory" />
+            <EndpointRow method="DELETE" route="/memories/:id"      price="$0.0001" description="Delete own memory" />
+            <EndpointRow method="GET"    route="/health"            price="free"    description="Health check" />
+            <EndpointRow method="GET"    route="/.well-known/x402.json" price="free" description="x402 manifest" />
           </tbody>
         </table>
       </div>
+    </div>
+  </section>
+
+  <!-- Footer CTA -->
+  <section class="cta">
+    <div class="container">
+      <p class="mono">GET https://engram.dkta.dev/.well-known/x402.json</p>
     </div>
   </section>
 </Base>
@@ -110,40 +120,27 @@ const { data } = await client.retrieve(hash)`;
     font-family: var(--font-mono);
     font-size: 0.75rem;
     color: var(--accent);
-    letter-spacing: 0.15em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    margin-bottom: var(--space-4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-
-  .eyebrow::before, .eyebrow::after {
-    content: '';
-    width: 40px;
-    height: 1px;
-    background: var(--accent);
-    opacity: 0.4;
+    margin-bottom: var(--space-3);
   }
 
   h1 {
     font-size: clamp(2.5rem, 6vw, 4rem);
-    font-weight: 700;
-    letter-spacing: -0.04em;
-    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -0.03em;
     margin-bottom: var(--space-4);
-    background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%);
+    background: linear-gradient(135deg, var(--text) 60%, var(--accent-soft));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .subtitle {
-    font-size: 1.125rem;
+    font-size: 1.1rem;
     color: var(--text-muted);
     max-width: 520px;
-    margin: 0 auto var(--space-6);
+    margin: 0 auto var(--space-5);
     line-height: 1.7;
   }
 
@@ -159,16 +156,16 @@ const { data } = await client.retrieve(hash)`;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     color: var(--text-muted);
   }
 
   .dot {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--success);
-    box-shadow: 0 0 8px var(--success);
+    box-shadow: 0 0 6px var(--success);
     animation: pulse 2s infinite;
   }
 
@@ -177,7 +174,7 @@ const { data } = await client.retrieve(hash)`;
     50% { opacity: 0.4; }
   }
 
-  /* Code Card */
+  /* Code */
   .code-section {
     padding: 0 0 var(--space-8);
   }
@@ -185,105 +182,116 @@ const { data } = await client.retrieve(hash)`;
   .code-card {
     background: var(--bg-surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: 12px;
     overflow: hidden;
-    max-width: 640px;
+    max-width: 680px;
     margin: 0 auto;
   }
 
   .code-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 6px;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255,255,255,0.02);
   }
 
   .code-dot {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
+    opacity: 0.8;
+  }
+
+  .code-filename {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
   }
 
   .code-body {
-    padding: var(--space-4);
-    font-size: 0.82rem;
-    line-height: 1.8;
-    overflow-x: auto;
+    padding: 1.25rem 1.5rem;
   }
 
-  /* Shiki css-variables theme overrides */
   .code-body :global(pre) {
     background: transparent !important;
     margin: 0;
-    padding: 0;
-  }
-
-  .code-body :global(code) {
-    font-family: var(--font-mono);
     font-size: 0.82rem;
+    line-height: 1.7;
   }
 
-  :global(:root) {
-    --astro-code-color-text: var(--text);
+  /* css-variables theme tokens for Astro Code */
+  .code-body {
+    --astro-code-color-text: #e2e2f0;
     --astro-code-color-background: transparent;
-    --astro-code-token-constant: #4fc3f7;
-    --astro-code-token-string: #00FF94;
-    --astro-code-token-comment: #4b5563;
-    --astro-code-token-keyword: var(--accent-soft);
-    --astro-code-token-parameter: var(--text);
-    --astro-code-token-function: #f9a8d4;
-    --astro-code-token-string-expression: #00FF94;
-    --astro-code-token-punctuation: var(--text-muted);
+    --astro-code-token-constant: #c7bfff;
+    --astro-code-token-string: #a5f3b4;
+    --astro-code-token-comment: #6b6b8a;
+    --astro-code-token-keyword: #7c6af7;
+    --astro-code-token-parameter: #e2e2f0;
+    --astro-code-token-function: #4fc3f7;
+    --astro-code-token-string-expression: #a5f3b4;
+    --astro-code-token-punctuation: #6b6b8a;
     --astro-code-token-link: #4fc3f7;
   }
 
   /* Features */
   .features {
-    padding: var(--space-6) 0 var(--space-8);
+    padding: var(--space-8) 0;
+    border-top: 1px solid var(--border);
   }
 
   .feature-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1px;
     background: var(--border);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
   }
 
-  /* API Table */
-  .api-section {
-    padding: 0 0 var(--space-8);
+  /* Endpoints */
+  .endpoints {
+    padding: var(--space-8) 0;
+    border-top: 1px solid var(--border);
   }
 
   .table-wrap {
     overflow-x: auto;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: 4px;
   }
 
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.82rem;
+    font-size: 0.85rem;
   }
 
-  thead tr {
-    background: rgba(255, 255, 255, 0.02);
-    border-bottom: 1px solid var(--border);
-  }
-
-  th {
+  thead th {
     padding: 0.75rem 1.25rem;
     text-align: left;
     font-family: var(--font-mono);
     font-size: 0.7rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    font-weight: 600;
     color: var(--text-muted);
-    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+
+  /* CTA */
+  .cta {
+    padding: var(--space-7) 0;
+    text-align: center;
+    border-top: 1px solid var(--border);
+  }
+
+  .cta p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    opacity: 0.6;
   }
 </style>

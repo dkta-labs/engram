@@ -1,6 +1,6 @@
 ---
 interface Props {
-  method: 'GET' | 'POST' | 'PUT';
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   route: string;
   price: string;
   description: string;
@@ -14,7 +14,7 @@ const isFree = price === 'free';
   <td><span class={`method ${methodClass}`}>{method}</span></td>
   <td><span class="route">{route}</span></td>
   <td><span class={`price ${isFree ? 'free' : ''}`}>{price}</span></td>
-  <td>{description}</td>
+  <td class="desc">{description}</td>
 </tr>
 
 <style>
@@ -25,25 +25,24 @@ const isFree = price === 'free';
     font-size: 0.82rem;
   }
 
-  tr:last-child td {
-    border-bottom: none;
-  }
-
-  tr:hover td {
-    background: rgba(255, 255, 255, 0.015);
-  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.015); }
 
   .method {
     font-family: var(--font-mono);
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 600;
     padding: 0.2rem 0.5rem;
     border-radius: var(--radius);
+    display: inline-block;
+    min-width: 52px;
+    text-align: center;
   }
 
-  .method.get { background: rgba(0, 255, 148, 0.1); color: var(--success); }
-  .method.post { background: rgba(124, 106, 247, 0.1); color: var(--accent-soft); }
-  .method.put { background: rgba(251, 191, 36, 0.1); color: #fbbf24; }
+  .method.get    { background: rgba(0,255,148,0.1);   color: var(--success); }
+  .method.post   { background: rgba(124,106,247,0.1); color: var(--accent-soft); }
+  .method.patch  { background: rgba(251,191,36,0.1);  color: #fbbf24; }
+  .method.delete { background: rgba(248,113,113,0.1); color: #f87171; }
 
   .route {
     font-family: var(--font-mono);
@@ -54,9 +53,10 @@ const isFree = price === 'free';
     font-family: var(--font-mono);
     font-size: 0.78rem;
     color: #4fc3f7;
+    white-space: nowrap;
   }
 
-  .price.free {
-    color: var(--text-muted);
-  }
+  .price.free { color: var(--text-muted); }
+
+  .desc { color: var(--text-muted); }
 </style>
