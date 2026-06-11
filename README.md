@@ -1,115 +1,58 @@
 # Engram
 
-Encrypted persistent memory for AI agents. Wallet-as-identity, pay-per-operation with USDC on Base.
+Shared memory API for AI agents. Pay per operation with USDC on Base via [x402](https://x402.org) — no accounts, no API keys. Your wallet address is your identity.
 
-**engram.dkta.dev** — no accounts, no API keys. Just a wallet.
+**[engram.dkta.dev](https://engram.dkta.dev)**
+
+## How It Works
+
+Engram stores and retrieves memories scoped to a wallet address. When you call a paid route, the x402 protocol handles payment automatically — USDC on Base, fractions of a cent per operation. The wallet address on the payment becomes the owner of anything you write.
+
+Memories can be `public` (readable by anyone) or `private` (only readable by the writing wallet). Full-text search is available across all memories you have access to.
 
 ## Quick Start
 
 ```bash
-npm install engram-sdk
+# Store a memory ($0.001 USDC)
+curl -X POST https://engram.dkta.dev/memories \
+  -H "Content-Type: application/json" \
+  -H "X-Payment: <x402-payment-header>" \
+  -d '{"content": "user prefers dark mode", "tags": ["preferences"], "visibility": "private"}'
+
+# Search memories ($0.001 USDC)
+curl "https://engram.dkta.dev/memories/search?q=dark+mode" \
+  -H "X-Payment: <x402-payment-header>"
+
+# Read a memory ($0.0001 USDC)
+curl "https://engram.dkta.dev/memories/<id>" \
+  -H "X-Payment: <x402-payment-header>"
 ```
 
-```typescript
-import { EngramClient } from 'engram-sdk'
+See [x402.org](https://x402.org) for how to generate payment headers.
 
-const client = new EngramClient({
-  privateKey: '0x...',         // agent's wallet private key
-  network: 'base-sepolia',     // testnet
-  apiUrl: 'https://engram.dkta.dev',
-})
+## API
 
-// Register once
-const { agentId } = await client.register()
+| Method | Route | Price | Description |
+|--------|-------|-------|-------------|
+| POST | `/memories` | $0.001 | Write a memory |
+| GET | `/memories/search?q=` | $0.001 | Full-text search |
+| GET | `/memories/:id` | $0.0001 | Read a memory by ID |
+| PATCH | `/memories/:id` | $0.001 | Update your memory |
+| DELETE | `/memories/:id` | $0.0001 | Delete your memory |
+| GET | `/health` | free | Health check |
+| GET | `/openapi.json` | free | OpenAPI spec |
+| GET | `/llms.txt` | free | LLM-readable summary |
 
-// Store a memory
-const { hash } = await client.store({
-  type: 'kv',
-  data: { userName: 'Alice', preference: 'dark mode' },
-  metadata: { tags: ['preferences'] },
-})
+Writes are scoped to the payer wallet address. Reads return any public memory or private memories owned by the payer.
 
-// Retrieve it
-const { data } = await client.retrieve(hash)
-```
+## Discovery
 
-Your agent needs USDC on Base Sepolia to pay for operations. Get testnet USDC from the [Circle faucet](https://faucet.circle.com/).
+- OpenAPI spec: `https://engram.dkta.dev/openapi.json`
+- LLM summary: `https://engram.dkta.dev/llms.txt`
+- x402 manifest: `https://engram.dkta.dev/.well-known/x402.json`
+- Plugin manifest: `https://engram.dkta.dev/.well-known/ai-plugin.json`
 
-## How It Works
+## Related
 
-Your agent's wallet **is** its identity. No sign-up, no API keys, no OAuth.
-
-1. Agent signs a message with its private key to prove wallet ownership
-2. An AES-256-GCM encryption key is derived from that signature via HKDF-SHA256
-3. Data is encrypted and stored as content-addressed blobs (SHA-256 hash = address)
-4. Agent registration is recorded on-chain via a lightweight smart contract on Base
-5. Each paid operation uses [x402](https://x402.org) micropayments — USDC on Base, fractions of a cent
-
-The server never stores keys or signatures. Derive, use, discard.
-
-## API Reference
-
-All authenticated routes require `X-Agent-Sig` header. Paid routes require x402 payment (USDC on Base Sepolia).
-
-| Method | Route | Price | Auth | Description |
-|--------|-------|-------|------|-------------|
-| POST | /v1/agent/register | free | sig | Register agent wallet, get agentId |
-| GET | /v1/agent/:agentId | free | — | Get agent info |
-| GET | /v1/agent/:agentId/index | $0.0001 | sig | Get decrypted memory index |
-| PUT | /v1/agent/:agentId/index | $0.0005 | sig | Update memory index |
-| POST | /v1/memory | $0.001 | sig | Store encrypted memory |
-| GET | /v1/memory/:hash | $0.0001 | sig | Retrieve + decrypt memory |
-| GET | /v1/health | free | — | Service status |
-
-### Authentication
-
-The `X-Agent-Sig` header is a JSON object:
-
-```json
-{
-  "sig": "0x...",
-  "agentId": 42,
-  "timestamp": 1714857600
-}
-```
-
-Signature is over `keccak256("engram:auth:v1:" + agentId + ":" + timestamp)`. Valid for 5 minutes.
-
-## Architecture
-
-```
-Agent (wallet)
-    │
-    │  HTTP + x402 payment
-    ▼
-engram.dkta.dev
-    │
-    ├── x402 middleware (payment verification)
-    ├── auth middleware (wallet signature verification)
-    ├── crypto service (AES-256-GCM encrypt/decrypt)
-    ├── blobstore (SHA-256 content-addressed file storage)
-    └── registry service (Base on-chain AgentRegistry contract)
-```
-
-## Self-Hosting
-
-```bash
-git clone https://github.com/dsr-restyn/engram
-cd engram
-cp .env.example .env
-# Fill in: SERVER_PRIVATE_KEY, PAYMENT_ADDRESS, CONTRACT_ADDRESS
-
-# Deploy contract
-cd packages/contracts
-npm install
-npx hardhat run scripts/deploy.ts --network base-sepolia
-# Copy CONTRACT_ADDRESS to .env
-
-# Run
-cd ../..
-docker-compose up -d
-```
-
-## License
-
-MIT
+- [extract](https://github.com/dkta0/extract) — web content extraction, same x402 pattern
+- [x402](https://x402.org) — the payment protocol
